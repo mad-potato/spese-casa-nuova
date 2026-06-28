@@ -38,7 +38,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
 
   </style>
   <title>Casa Nuova</title>
-  <meta name="app-version" content="sync-sheets-import-excel-20260628">
+  <meta name="app-version" content="sync-sheets-seed-list-v6-20260628">
 </head>
 <body>
   <div class="phone-shell">
@@ -46,7 +46,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
       <div class="shine"></div>
       <div class="topbar">
         <span class="pill">🏠 Casa nuova</span>
-        <button id="resetBtn" class="ghost" aria-label="Importa lista Excel originale">↺</button>
+        <button id="resetBtn" class="ghost" aria-label="Importa lista acquisti originale">↺</button>
       </div>
       <h1>Spese casa<br><span>senza ansia.</span></h1>
       <p class="subtitle">Lista acquisti smart, pensata per iPhone e uso veloce al supermercato.</p>
@@ -240,7 +240,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
     "category": "CURA PERSONALE",
     "qty": 1,
     "price": 0,
-    "notes": ""
+    "notes": "Voce duplicata dal file originale"
   },
   {
     "id": 16,
@@ -547,51 +547,6 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
     "qty": 1,
     "price": 0,
     "notes": ""
-  },
-  {
-    "id": 155,
-    "bought": false,
-    "name": "7",
-    "category": "ALTRO",
-    "qty": 1,
-    "price": 0,
-    "notes": ""
-  },
-  {
-    "id": 156,
-    "bought": false,
-    "name": "10",
-    "category": "ALTRO",
-    "qty": 1,
-    "price": 0,
-    "notes": ""
-  },
-  {
-    "id": 157,
-    "bought": false,
-    "name": "6",
-    "category": "ALTRO",
-    "qty": 1,
-    "price": 0,
-    "notes": ""
-  },
-  {
-    "id": 158,
-    "bought": false,
-    "name": "17",
-    "category": "ALTRO",
-    "qty": 1,
-    "price": 0,
-    "notes": ""
-  },
-  {
-    "id": 159,
-    "bought": false,
-    "name": "9",
-    "category": "ALTRO",
-    "qty": 1,
-    "price": 0,
-    "notes": ""
   }
 ];
     window.INITIAL_CATEGORIES = ["ALTRO", "SUPERMERCATO", "BUCATO", "CURA PERSONALE", "PULIZIA BAGNO", "PULIZIA CASA", "UTENSILI CUCINA"];
@@ -686,6 +641,7 @@ async function syncLoad(){
     const data = await apiList();
     if (!data.ok) throw new Error(data.error || 'Risposta non valida');
     items = (data.items || []).map(fromSheet);
+    await autoSeedMissingInitialItems();
     saveCache();
     render();
     setSyncStatus('☁️ Sincronizzato con Google Sheets', true);
@@ -715,6 +671,29 @@ function normalizeKey(value){
 function itemKey(item){
   return normalizeKey(item.name) + '|' + normalizeKey(item.category || 'ALTRO');
 }
+
+async function autoSeedMissingInitialItems(){
+  const initial = window.INITIAL_ITEMS.map(normalizeInitial);
+  const existing = new Set(items.map(itemKey));
+  const missing = initial.filter(i => !existing.has(itemKey(i)));
+  if (!missing.length) return;
+  setSyncStatus(`☁️ Importo ${missing.length} elementi iniziali…`, true);
+  for (const original of missing) {
+    try {
+      const saved = await syncAdd({
+        ...original,
+        id: '',
+        data: new Date().toISOString()
+      });
+      items.push(saved);
+      existing.add(itemKey(saved));
+    } catch (err) {
+      console.error('Auto import non riuscito per', original, err);
+      throw err;
+    }
+  }
+}
+
 async function importMissingInitialItems(){
   if (isSyncing) return;
   const initial = window.INITIAL_ITEMS.map(normalizeInitial);

@@ -1,5 +1,13 @@
-# Spese Casa Nuova — Sync Sheets + Import Excel
+# Spese Casa Nuova — sync Google Sheets v6
 
-Versione collegata a Google Sheets con pulsante ↺ per importare nel foglio gli elementi originali del file Excel che mancano nella lista condivisa.
+Versione corretta: al primo avvio importa automaticamente nel Google Sheet la lista iniziale degli elementi da comprare indicata dall’utente.
 
-Dopo aver aggiornato GitHub Pages, apri l’app con `?v=jsonp5`, poi premi ↺ in alto a destra e conferma l’import.
+## Aggiornamento GitHub Pages
+
+1. Estrai questo ZIP.
+2. Carica i file nella root del repository GitHub.
+3. Sostituisci quelli vecchi.
+4. Fai Commit changes.
+5. Apri l’app con `?v=seed6`.
+
+Se la lista Google Sheets è vuota o incompleta, l’app aggiunge automaticamente gli elementi mancanti.
