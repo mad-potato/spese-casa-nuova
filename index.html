@@ -597,7 +597,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
     window.INITIAL_CATEGORIES = ["ALTRO", "SUPERMERCATO", "BUCATO", "CURA PERSONALE", "PULIZIA BAGNO", "PULIZIA CASA", "UTENSILI CUCINA"];
   </script>
   <script>
-// Versione sincronizzata Google Sheets.
+// Versione sincronizzata Google Sheets via JSONP, fix CORS Safari/GitHub Pages.
 // Fix cache vecchia versione GitHub Pages / iPhone: pulisce service worker cache-first precedente.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
@@ -606,7 +606,7 @@ if ('caches' in window) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
 }
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxVO2TiYLCk4Givdfsi5ega6cNrVa_ARgoGsVCp7tXAp27qUuJcNDzA6Sz-nwCui6Hq5g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzy-NiuHzMaytAMAlom34G-2L5_u2sOhYLf4UQRH1fvj97UyQhE8lJNGggvO-3GXHD9aQ/exec';
 const STORAGE_KEY = 'spese-casa-nuova-sheets-cache-v1';
 let items = loadCache();
 let activeStatus = 'all';
@@ -636,19 +636,49 @@ function setSyncStatus(text, ok=true){
   el.textContent = text;
   el.classList.toggle('offline', !ok);
 }
+// Apps Script non gestisce sempre bene CORS/POST da GitHub Pages su Safari/iPhone.
+// Questa versione usa JSONP via <script>, quindi funziona anche cross-origin.
+function jsonpRequest(action, payload = {}){
+  return new Promise((resolve, reject) => {
+    const callbackName = `speseCasaCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timeout Google Sheets'));
+    }, 15000);
+
+    function cleanup(){
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = data => {
+      cleanup();
+      resolve(data);
+    };
+
+    const url = new URL(API_URL);
+    url.searchParams.set('action', action);
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('t', String(Date.now()));
+    if (Object.keys(payload).length) {
+      url.searchParams.set('payload', JSON.stringify(payload));
+    }
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('Errore caricamento Google Apps Script'));
+    };
+    script.src = url.toString();
+    document.body.appendChild(script);
+  });
+}
 async function apiList(){
-  const res = await fetch(`${API_URL}?action=list&t=${Date.now()}`, { method:'GET', cache:'no-store' });
-  if (!res.ok) throw new Error(`Errore lettura ${res.status}`);
-  return res.json();
+  return jsonpRequest('list');
 }
 async function apiPost(action, body){
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, ...body })
-  });
-  if (!res.ok) throw new Error(`Errore salvataggio ${res.status}`);
-  return res.json();
+  return jsonpRequest(action, body);
 }
 async function syncLoad(){
   try {
