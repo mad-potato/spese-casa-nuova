@@ -7,7 +7,7 @@ if ('caches' in window) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
 }
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzy-NiuHzMaytAMAlom34G-2L5_u2sOhYLf4UQRH1fvj97UyQhE8lJNGggvO-3GXHD9aQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxnbzJvlvFiGf_HWvmiCMRf2VonymHf5Sa6b6qDf4JFz5yNZLQYq_Keq6oX1NQYDL7N4Q/exec';
 const STORAGE_KEY = 'spese-casa-nuova-sheets-cache-v1';
 let items = loadCache();
 let activeStatus = 'all';
