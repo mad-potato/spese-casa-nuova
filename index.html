@@ -38,7 +38,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
 
   </style>
   <title>Casa Nuova</title>
-  <meta name="app-version" content="sync-sheets-20260628">
+  <meta name="app-version" content="sync-sheets-import-excel-20260628">
 </head>
 <body>
   <div class="phone-shell">
@@ -46,7 +46,7 @@ button{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-se
       <div class="shine"></div>
       <div class="topbar">
         <span class="pill">🏠 Casa nuova</span>
-        <button id="resetBtn" class="ghost" aria-label="Ripristina dati iniziali">↺</button>
+        <button id="resetBtn" class="ghost" aria-label="Importa lista Excel originale">↺</button>
       </div>
       <h1>Spese casa<br><span>senza ansia.</span></h1>
       <p class="subtitle">Lista acquisti smart, pensata per iPhone e uso veloce al supermercato.</p>
@@ -708,6 +708,51 @@ async function syncDelete(id){
   const data = await apiPost('delete', { id:String(id) });
   if (!data.ok) throw new Error(data.error || 'Eliminazione non riuscita');
 }
+
+function normalizeKey(value){
+  return String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+function itemKey(item){
+  return normalizeKey(item.name) + '|' + normalizeKey(item.category || 'ALTRO');
+}
+async function importMissingInitialItems(){
+  if (isSyncing) return;
+  const initial = window.INITIAL_ITEMS.map(normalizeInitial);
+  const existing = new Set(items.map(itemKey));
+  const missing = initial.filter(i => !existing.has(itemKey(i)));
+  if (!missing.length) {
+    alert('La lista originale del file Excel sembra già presente nel Google Sheet.');
+    return;
+  }
+  const ok = confirm(`Vuoi importare nel Google Sheet ${missing.length} elementi del file Excel originale che mancano nella lista?`);
+  if (!ok) return;
+  isSyncing = true;
+  setSyncStatus(`☁️ Importo ${missing.length} elementi dall’Excel…`, true);
+  let addedCount = 0;
+  try {
+    for (const original of missing) {
+      const saved = await syncAdd({
+        ...original,
+        id: '',
+        data: new Date().toISOString()
+      });
+      items.push(saved);
+      existing.add(itemKey(saved));
+      addedCount++;
+    }
+    saveCache();
+    render();
+    setSyncStatus('☁️ Lista Excel importata e sincronizzata', true);
+    alert(`Import completato: ${addedCount} elementi aggiunti al Google Sheet.`);
+  } catch (err) {
+    console.error(err);
+    setSyncStatus('⚠️ Import Excel non completato', false);
+    alert('Non sono riuscito a importare tutta la lista originale. Riprova tra poco o controlla Apps Script.');
+  } finally {
+    isSyncing = false;
+  }
+}
+
 function allCategories(){ return [...new Set([...window.INITIAL_CATEGORIES, ...items.map(i=>i.category||'ALTRO')])].sort(); }
 function total(i){ return (Number(i.qty)||1) * (Number(i.price)||0); }
 function fmt(v){ return moneyFormatter.format(v || 0); }
@@ -818,7 +863,7 @@ list.addEventListener('click',async e=>{
     catch(err){ console.error(err); item.bought=previous; render(); saveCache(); alert('Non sono riuscito a sincronizzare la modifica.'); setSyncStatus('⚠️ Sincronizzazione non riuscita', false); }
   } else openForm(id);
 });
-$('#resetBtn').addEventListener('click',()=>{ alert('In questa versione il ripristino locale è disattivato: i dati arrivano da Google Sheets. Modifica o svuota il foglio Google per resettare la lista condivisa.'); });
+$('#resetBtn').addEventListener('click', importMissingInitialItems);
 render();
 syncLoad();
 
