@@ -1,4 +1,11 @@
-const CACHE='spese-casa-v1';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png','./assets/apple-touch-icon.png'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
-self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    await self.registration.unregister();
+    const clientsList = await clients.matchAll({ type: 'window' });
+    clientsList.forEach(client => client.navigate(client.url));
+  })());
+});
+self.addEventListener('fetch', event => {});

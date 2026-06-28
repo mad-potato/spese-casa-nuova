@@ -49,10 +49,19 @@ function render(){
     <div class="meta" data-action="edit"><div class="name">${escapeHtml(i.name)}</div><span class="cat">${icon(i.category)} ${escapeHtml(i.category||'ALTRO')}</span></div>
     <div class="price" data-action="edit">${fmt(total(i))}<span class="qty">x${i.qty||1}</span></div>
   </article>`).join('');
-  $('#emptyState').classList.toggle('hidden', data.length>0);
+  const empty = $('#emptyState');
+  empty.classList.toggle('hidden', data.length>0);
+  const q = $('#searchInput').value.trim();
+  if (data.length === 0 && q) {
+    empty.innerHTML = `Nessun acquisto trovato.<br><button type="button" class="quick-add" id="quickAddBtn">＋ Aggiungi “${escapeHtml(q)}”</button>`;
+  } else {
+    empty.textContent = 'Nessun acquisto trovato. Prova a cambiare filtro o aggiungine uno nuovo ✨';
+  }
 }
 function openForm(id=null){
-  editingId=id; const item=items.find(i=>i.id===id) || {name:'',category:allCategories()[0]||'ALTRO',qty:1,price:'',notes:'',bought:false};
+  editingId=id;
+  const typedName = $('#searchInput')?.value?.trim() || '';
+  const item=items.find(i=>i.id===id) || {name:typedName,category:'SUPERMERCATO',qty:1,price:'',notes:'',bought:false};
   $('#dialogTitle').textContent = id ? 'Modifica acquisto' : 'Nuovo acquisto';
   $('#nameField').value=item.name; categoryField.value=item.category || 'ALTRO'; $('#qtyField').value=item.qty||1; $('#priceField').value=item.price||''; $('#notesField').value=item.notes||''; $('#boughtField').checked=!!item.bought;
   $('#deleteBtn').classList.toggle('hidden', !id); $('#itemDialog').showModal(); setTimeout(()=>$('#nameField').focus(), 80);
@@ -70,7 +79,10 @@ function sparkle(){
 }
 function escapeHtml(str){ return String(str).replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
-$('#addBtn').addEventListener('click',()=>openForm()); $('#cancelBtn').addEventListener('click',closeForm);
+$('#addBtn').addEventListener('click',()=>openForm());
+$('#addInlineBtn').addEventListener('click',()=>openForm());
+$('#emptyState').addEventListener('click', e=>{ if(e.target.closest('#quickAddBtn')) openForm(); });
+$('#cancelBtn').addEventListener('click',closeForm);
 $('#itemForm').addEventListener('submit', e=>{ e.preventDefault(); upsertFromForm(); });
 $('#deleteBtn').addEventListener('click',()=>{ if(editingId){ items=items.filter(i=>i.id!==editingId); save(); closeForm(); render(); } });
 $('#searchInput').addEventListener('input',render); categorySelect.addEventListener('change',render);

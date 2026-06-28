@@ -1,5 +1,11 @@
-# Spese Casa Nuova — mini app iPhone
+# Spese Casa Nuova - fix comandi
 
-Apri `index.html` per provarla. Per usarla come app vera su iPhone, carica la cartella su un hosting HTTPS, poi apri Safari → Condividi → Aggiungi alla schermata Home.
+Questa versione ha CSS e JavaScript dentro `index.html`, così su GitHub Pages/iPhone non rischi di caricare file vecchi dalla cache.
 
-I dati vengono salvati sul dispositivo con localStorage. La lista iniziale deriva dal file Excel ottimizzato.
+Correzioni:
+- pulsante `+` cliccabile
+- pulsante grande `+ Aggiungi acquisto`
+- filtri `Tutto`, `Da comprare`, `Comprati` cliccabili
+- cache/service worker precedente disattivato
+
+Per aggiornare GitHub: carica tutti questi file nella root del repository e fai Commit changes.
