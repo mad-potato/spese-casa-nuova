@@ -3,7 +3,7 @@ const STORAGE_KEY = 'spese-casa-nuova-v1';
 let items = loadItems();
 let activeStatus = 'all';
 let editingId = null;
-const € = new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'});
+const moneyFormatter = new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'});
 const $ = s => document.querySelector(s);
 const list = $('#list');
 const categorySelect = $('#categorySelect');
@@ -16,7 +16,7 @@ function loadItems(){
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
 function allCategories(){ return [...new Set([...window.INITIAL_CATEGORIES, ...items.map(i=>i.category||'ALTRO')])].sort(); }
 function total(i){ return (Number(i.qty)||1) * (Number(i.price)||0); }
-function fmt(v){ return €.format(v || 0); }
+function fmt(v){ return moneyFormatter.format(v || 0); }
 function icon(cat){
   const c=(cat||'').toLowerCase();
   if(c.includes('bagno')) return '🚿'; if(c.includes('cucina')) return '🍳'; if(c.includes('bucato')) return '🧺';
