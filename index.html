@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11101f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Casa Nuova">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Casa Nuova</title>
+</head>
+<body>
+  <div class="phone-shell">
+    <header class="hero">
+      <div class="shine"></div>
+      <div class="topbar">
+        <span class="pill">🏠 Casa nuova</span>
+        <button id="resetBtn" class="ghost" aria-label="Ripristina dati iniziali">↺</button>
+      </div>
+      <h1>Spese casa<br><span>senza ansia.</span></h1>
+      <p class="subtitle">Lista acquisti smart, pensata per iPhone e uso veloce al supermercato.</p>
+      <section class="stats-grid" aria-label="Riepilogo spese">
+        <article class="stat primary"><small>Totale</small><strong id="totalAll">€0</strong></article>
+        <article class="stat"><small>Comprato</small><strong id="totalBought">€0</strong></article>
+        <article class="stat"><small>Da comprare</small><strong id="totalTodo">€0</strong></article>
+      </section>
+    </header>
+
+    <main>
+      <div class="search-card">
+        <div class="search-row">
+          <span>🔎</span>
+          <input id="searchInput" placeholder="Cerca acquisto, categoria…" autocomplete="off">
+        </div>
+        <div class="filters" id="statusFilters">
+          <button class="chip active" data-status="all">Tutto</button>
+          <button class="chip" data-status="todo">Da comprare</button>
+          <button class="chip" data-status="bought">Comprati</button>
+        </div>
+        <select id="categorySelect" aria-label="Filtra categoria"></select>
+      </div>
+
+      <div class="progress-card">
+        <div><strong id="progressText">0%</strong><span> completato</span></div>
+        <div class="progress"><i id="progressBar"></i></div>
+      </div>
+
+      <section id="list" class="list" aria-live="polite"></section>
+      <p id="emptyState" class="empty hidden">Nessun acquisto trovato. Prova a cambiare filtro o aggiungine uno nuovo ✨</p>
+    </main>
+  </div>
+
+  <button id="addBtn" class="fab" aria-label="Aggiungi acquisto">＋</button>
+
+  <dialog id="itemDialog">
+    <form id="itemForm" method="dialog" class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="dialogTitle">Nuovo acquisto</h2>
+      <label>Descrizione<input id="nameField" required placeholder="Es. Stendino, detersivo, lampada…"></label>
+      <div class="two-cols">
+        <label>Categoria<select id="categoryField"></select></label>
+        <label>Quantità<input id="qtyField" type="number" min="1" step="1" value="1"></label>
+      </div>
+      <label>Prezzo unitario<input id="priceField" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+      <label>Note<input id="notesField" placeholder="Negozio, marca, misura…"></label>
+      <label class="toggle"><input id="boughtField" type="checkbox"><span>Già comprato</span></label>
+      <menu>
+        <button type="button" id="deleteBtn" class="danger hidden">Elimina</button>
+        <button type="button" id="cancelBtn" class="ghost-dark">Annulla</button>
+        <button value="default" class="save">Salva</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script>
+    window.INITIAL_ITEMS = [
+  {
+    "id": 1,
+    "bought": false,
+    "name": "Detersivo colorati",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 2,
+    "bought": false,
+    "name": "Detersivo bianchi",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 3,
+    "bought": false,
+    "name": "Smacchiatore",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 4,
+    "bought": false,
+    "name": "Candegina delicata",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 5,
+    "bought": false,
+    "name": "Candegina normale",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 6,
+    "bought": false,
+    "name": "Ammorbidente",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 7,
+    "bought": false,
+    "name": "Sgrassatore",
+    "category": "BUCATO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 8,
+    "bought": false,
+    "name": "Shampoo Patato",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 9,
+    "bought": false,
+    "name": "Shampoo Patata",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 10,
+    "bought": false,
+    "name": "Balsamo",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 11,
+    "bought": false,
+    "name": "Bagnoschiuma (Dove o Nivea!)",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 12,
+    "bought": false,
+    "name": "Spugna da bagno",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 13,
+    "bought": false,
+    "name": "Spazzolino Patato",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 14,
+    "bought": false,
+    "name": "Dentifricio",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 15,
+    "bought": false,
+    "name": "Spazzolino Patato",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 16,
+    "bought": false,
+    "name": "Filo interdentale",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 17,
+    "bought": false,
+    "name": "Collutorio",
+    "category": "CURA PERSONALE",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 18,
+    "bought": false,
+    "name": "Anticalcale per bagno",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 19,
+    "bought": false,
+    "name": "Disifettante bagno",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 20,
+    "bought": false,
+    "name": "Detergente WC",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 21,
+    "bought": false,
+    "name": "Pastiglie per WC",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 22,
+    "bought": false,
+    "name": "Spazzola WC",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 23,
+    "bought": false,
+    "name": "Cestino piccolo per il bagno",
+    "category": "PULIZIA BAGNO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 24,
+    "bought": false,
+    "name": "Aspirapolvere",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 25,
+    "bought": false,
+    "name": "Bastone verde swiffer pavimento",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 26,
+    "bought": false,
+    "name": "Confezione panni swiffer verde pavimento",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 27,
+    "bought": false,
+    "name": "Swiffer spolverino giallo",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 28,
+    "bought": false,
+    "name": "Confezione anni swiffer giallo",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 29,
+    "bought": false,
+    "name": "Scopa",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 30,
+    "bought": false,
+    "name": "Paletta",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 31,
+    "bought": false,
+    "name": "Bastone per ragnatele",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 32,
+    "bought": false,
+    "name": "Secchio per mocio",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 33,
+    "bought": false,
+    "name": "Mocio",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 34,
+    "bought": false,
+    "name": "Confezione vilete",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 35,
+    "bought": false,
+    "name": "Detergente pavimenti",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 36,
+    "bought": false,
+    "name": "Detergente acciaio",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 37,
+    "bought": false,
+    "name": "Confezione panni microfibra",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 38,
+    "bought": false,
+    "name": "Detergente spray multisuperficie",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 39,
+    "bought": false,
+    "name": "Detergente spray vetro",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 40,
+    "bought": false,
+    "name": "Sgrassatore",
+    "category": "PULIZIA CASA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 41,
+    "bought": false,
+    "name": "Set piatti",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 42,
+    "bought": false,
+    "name": "Set posate",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 43,
+    "bought": false,
+    "name": "Set coltelli che tagliano",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 44,
+    "bought": false,
+    "name": "Set bicchieri",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 45,
+    "bought": false,
+    "name": "Set mestoli",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 46,
+    "bought": false,
+    "name": "Scolapasta",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 47,
+    "bought": false,
+    "name": "Pentole",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 48,
+    "bought": false,
+    "name": "Padelle",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 49,
+    "bought": false,
+    "name": "Stracci per la cucina",
+    "category": "UTENSILI CUCINA",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 155,
+    "bought": false,
+    "name": "7",
+    "category": "ALTRO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 156,
+    "bought": false,
+    "name": "10",
+    "category": "ALTRO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 157,
+    "bought": false,
+    "name": "6",
+    "category": "ALTRO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 158,
+    "bought": false,
+    "name": "17",
+    "category": "ALTRO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  },
+  {
+    "id": 159,
+    "bought": false,
+    "name": "9",
+    "category": "ALTRO",
+    "qty": 1,
+    "price": 0,
+    "notes": ""
+  }
+];
+    window.INITIAL_CATEGORIES = ["ALTRO", "BUCATO", "CURA PERSONALE", "PULIZIA BAGNO", "PULIZIA CASA", "UTENSILI CUCINA"];
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
